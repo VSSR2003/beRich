@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            overflow: hidden;
+            background: linear-gradient(45deg, #020947, #525991, #020947, #525991, #020947);
+            background-size: 400% 400%;
+        }
+
+        .container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 80%;
+            height: 80%;
+            background-color: white;
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        .search-bar {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .search-box {
+            display: flex;
+            align-items: center;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            padding: 5px;
+            position: relative;
+        }
+
+        .index {
+            text-align: left;
+        }
+
+        input[type="text"] {
+            width: 70%;
+            padding: 10px;
+            border: none;
+            outline: none;
+        }
+
+        .voice-search {
+            background: url('./res/mic.png') no-repeat center center;
+            background-size: 24px 24px;
+            width: 14px;
+            height: 24px;
+            border: none;
+            padding-left: 0;
+            cursor: pointer;
+        }
+    </style>
+    <script>
+        const text = 'Hello, world!';
+        const source = 'en';
+        const target = 'fr';
+
+        const apiUrl = `http://localhost:5000/translate?text=${encodeURIComponent(text)}&source=${source}&target=${target}`;
+
+        fetch(apiUrl)
+            .then(response => response.json())
+            .then(data => {
+                console.log(data);
+            })
+            .catch(error => {
+                console.error('Translation error:', error);
+            });
+
+    </script>
+
+</head>
+
+<body>
+    <div class="container">
+        <div class="search-bar">
+            <div class="search-box">
+                <button class="voice-search" id="voiceButton"></button>
+                <input type="text" placeholder="Search" id="searchInput">
+            </div>
+        </div>
+        <div class="dashboard-content">
+            <div id="recognizedText"></div>
+        </div>
+        <div class="asr-bar">
+            <button class="asr-button" id="asrButton">Start ASR</button>
+            <div id="recognizedSpeech"></div>
+        </div>
+
+    </div>
+
+    <script>
+        const asrButton = document.getElementById('asrButton');
+        const recognizedSpeech = document.getElementById('recognizedSpeech');
+
+        // Check if the browser supports the SpeechRecognition API
+        if ('SpeechRecognition' in window || 'webkitSpeechRecognition' in window) {
+            const asr = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
+
+            // Event handler for when speech is recognized
+            asr.onresult = function (event) {
+                const result = event.results[0][0].transcript;
+                recognizedSpeech.innerText = result;
+
+                // You can perform actions with the recognized text here
+                // For example, translate the recognized text to another language
+                const sourceLanguage = 'en'; // English
+                const targetLanguage = 'fr'; // French
+                translateText(result, sourceLanguage, targetLanguage);
+            };
+
+            // Event handler for when ASR ends
+            asr.onend = function () {
+                asrButton.disabled = false;
+                asrButton.innerText = 'Start ASR';
+            };
+
+            // Event handler for clicking the ASR button
+            asrButton.addEventListener('click', function () {
+                if (asrButton.innerText === 'Start ASR') {
+                    asrButton.disabled = true;
+                    asrButton.innerText = 'Listening...';
+                    recognizedSpeech.innerText = 'Listening...';
+                    asr.start();
+                } else {
+                    asr.stop();
+                }
+            });
+        } else {
+            // Browser doesn't support SpeechRecognition
+            asrButton.disabled = true;
+            asrButton.innerText = 'ASR not supported';
+        }
+
+        // Function to translate text (similar to your existing code)
+        function translateText(text, sourceLanguage, targetLanguage) {
+            // Replace 'YOUR_API_KEY' with your actual API key
+            const apiKey = 'YOUR_API_KEY';
+
+            // Construct the URL for the Translation API request
+            const apiUrl = `https://translation.googleapis.com/language/translate/v2?key=${apiKey}&source=${sourceLanguage}&target=${targetLanguage}&q=${encodeURIComponent(text)}`;
+
+            // Make a GET request to the Translation API
+            fetch(apiUrl, {
+                method: 'GET',
+            })
+                .then(response => response.json())
+                .then(data => {
+                    const translatedText = data.data.translations[0].translatedText;
+                    recognizedSpeech.innerText = `Translation: ${translatedText}`;
+                })
+                .catch(error => {
+                    console.error('Translation error:', error);
+                    recognizedSpeech.innerText = 'Translation error';
+                });
+        }
+    </script>
+
+
+
+</body>
+
+
+</html>
